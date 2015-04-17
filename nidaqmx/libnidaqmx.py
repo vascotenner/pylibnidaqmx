@@ -179,10 +179,10 @@ def _convert_header(header_name, header_module_name):
     print('Generating %r' % (fn), file=sys.stderr)
     with open(fn, 'w') as f:
         f.write("# This file is auto-generated. Do not edit!\n\n")
-        f.write("from collections import namedtuple\n\n")
+        f.write("from .customtuple import customtuple\n\n")
         f.write("_d = %s\n" % pprint.pformat(_d))
-        f.write("DAQmxConstants = namedtuple('DAQmxConstants', _d.keys())\n")
-        f.write("DAQmx = DAQmxConstants(**_d)\n\n")
+        f.write("s = customtuple(*_d.keys())\n")
+        f.write("DAQmx = s(*_d.values())\n")
         f.write("error_map = %s\n" % pprint.pformat(err_map))
 
     print('Please upload generated file %r to http://code.google.com/p/pylibnidaqmx/issues'
@@ -241,7 +241,8 @@ def CHK(return_code, funcname, *args):
                 warning = error_map.get(return_code, return_code)
                 sys.stderr.write('%s%s warning: %s\n' % (funcname, args, warning))
         else:
-            text = '\n  '.join(['']+textwrap.wrap(buf.value, 80)+['-'*10])
+            text = '\n  '.join(['']+textwrap.wrap(buf.value.decode('utf-8'), 80)
+                               + ['-'*10])
             if return_code < 0:
                 raise NIDAQmxRuntimeError('%s%s:%s' % (funcname,args, text))
             else:
@@ -260,7 +261,9 @@ def CALL(name, *args):
     for a in args:
         if isinstance(a, unicode):
             print(name, 'argument', a, 'is unicode', file=sys.stderr)
-            new_args.append (bytes(a))
+            new_args.append (bytes(a,))# encoding='utf-8'))
+            #for python 3 change above line to
+            #new_args.append (bytes(a, encoding='utf-8'))
         else:
             new_args.append (a)
     # pylint: disable=star-args
